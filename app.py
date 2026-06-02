@@ -20,6 +20,7 @@ from image_pipeline import (
     enhance_image_with_context,
     generate_placement,
 )
+from styles import inject_css
 from utils import b64_to_pil, pil_to_bytes, resize_image
 from vision import recognize_product, suggest_placements
 
@@ -28,10 +29,11 @@ load_dotenv()
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Product Studio AI",
-    page_icon="📸",
-    layout="centered",
+    page_title="Kira — Product Studio",
+    page_icon="◆",
+    layout="wide",
 )
+inject_css()
 
 
 # ── Session state initialisation ──────────────────────────────────────────────
@@ -105,32 +107,42 @@ def reset_all() -> None:
 # ── Header ────────────────────────────────────────────────────────────────────
 head_l, head_r = st.columns([4, 1])
 with head_l:
-    st.title("📸 Product Studio AI")
-    st.caption("Upload an amateur product photo → get a studio-quality listing image.")
+    st.markdown(
+        '<div class="kira-brand"><span class="mark">◆</span>'
+        '<span class="name">Kira</span></div>',
+        unsafe_allow_html=True,
+    )
 with head_r:
     st.write("")
-    if st.button("🔄 Start over", use_container_width=True):
+    if st.button("Start over", use_container_width=True):
         reset_all()
 
 
-# ── Stage indicator ───────────────────────────────────────────────────────────
-def render_stage_pill() -> None:
-    current = st.session_state["stage"]
-    labels = {
-        "upload": "Upload",
-        "recognize": "Identify",
-        "enhance": "Enhance",
-        "place": "Place",
-    }
-    parts = []
-    for i, s in enumerate(STAGES, start=1):
-        marker = "🟢" if s == current else ("⚪" if STAGES.index(s) > STAGES.index(current) else "✅")
-        parts.append(f"{marker} **{i}. {labels[s]}**")
-    st.markdown(" &nbsp;→&nbsp; ".join(parts))
-    st.divider()
+# ── Stepper ───────────────────────────────────────────────────────────────────
+STEP_LABELS = {
+    "upload": "Upload",
+    "recognize": "Identify",
+    "enhance": "Enhance",
+    "place": "Place",
+}
 
 
-render_stage_pill()
+def render_stepper() -> None:
+    cur_i = STAGES.index(st.session_state["stage"])
+    parts = ['<div class="kira-stepper">']
+    for i, s in enumerate(STAGES):
+        cls = "active" if i == cur_i else ("done" if i < cur_i else "")
+        parts.append(
+            f'<div class="kira-step {cls}"><span class="num">{i + 1}</span>'
+            f'<span class="lbl">{STEP_LABELS[s]}</span></div>'
+        )
+        if i < len(STAGES) - 1:
+            parts.append('<span class="kira-step-sep"></span>')
+    parts.append("</div>")
+    st.markdown("".join(parts), unsafe_allow_html=True)
+
+
+render_stepper()
 
 
 # ── Fixed generation settings (demo build — no selectors) ─────────────────────
@@ -146,12 +158,28 @@ n_variations = 1
 # STAGE 1 — UPLOAD
 # ═══════════════════════════════════════════════════════════════════════════════
 if st.session_state["stage"] == "upload":
-    st.subheader("① Upload your product photo")
-    uploaded_file = st.file_uploader(
-        "Choose a JPG or PNG file",
-        type=["jpg", "jpeg", "png"],
-        help="Max recommended size: ~10 MB.",
-    )
+    hero_l, hero_r = st.columns([1, 1], gap="large")
+    with hero_l:
+        st.markdown(
+            '<div class="kira-eyebrow">AI Product Photography · Under 60 Seconds</div>'
+            '<div class="kira-hero">One phone photo in.<br>'
+            '<em>Studio listing</em> out.</div>'
+            '<div class="kira-sub">Drop a crooked, badly-lit shot from your phone. '
+            'Kira straightens it, cuts the background, adds studio lighting, then '
+            'suggests lifestyle scenes — listing-ready in seconds.</div>'
+            '<div class="kira-chips">'
+            '<span class="kira-chip"><span class="ic">⚡</span> No studio booking</span>'
+            '<span class="kira-chip"><span class="ic">✓</span> Amazon-compliant white BG</span>'
+            '<span class="kira-chip"><span class="ic">✦</span> Ready in seconds</span>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+    with hero_r:
+        uploaded_file = st.file_uploader(
+            "Drop a product photo",
+            type=["jpg", "jpeg", "png"],
+            label_visibility="collapsed",
+        )
 
     if uploaded_file is not None:
         # Resize once and store bytes in session state so later stages have it
@@ -159,16 +187,17 @@ if st.session_state["stage"] == "upload":
         st.session_state["image_bytes"] = pil_to_bytes(resized, format="PNG")
         st.session_state["source_name"] = uploaded_file.name
 
-        st.image(resized, caption=uploaded_file.name, use_container_width=True)
-        st.success(f"Loaded: **{uploaded_file.name}** ({uploaded_file.size / 1024:.1f} KB)")
-
         st.divider()
-        if st.button("→ Continue to recognition", type="primary", use_container_width=True):
-            # Force fresh recognition on entry to the next stage
-            st.session_state.pop("recognition", None)
-            goto("recognize")
-    else:
-        st.info("Upload an image above to get started.")
+        prev_l, prev_r = st.columns([1, 1], gap="large")
+        with prev_l:
+            st.image(resized, caption=uploaded_file.name, use_container_width=True)
+        with prev_r:
+            st.markdown('<div class="kira-eyebrow">Ready</div>', unsafe_allow_html=True)
+            st.markdown(f"**{uploaded_file.name}** · {uploaded_file.size / 1024:.0f} KB")
+            st.write("")
+            if st.button("Continue to Identify  →", type="primary", use_container_width=True):
+                st.session_state.pop("recognition", None)
+                goto("recognize")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

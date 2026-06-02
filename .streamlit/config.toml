@@ -1,0 +1,10 @@
+# Kira demo build — native Streamlit theme.
+# CSS in styles.py layers the rest (fonts, chrome-hiding, hero, cards).
+
+[theme]
+base = "dark"
+primaryColor = "#F2B24C"            # amber — buttons, accents
+backgroundColor = "#0B0B0C"          # near-black canvas
+secondaryBackgroundColor = "#161618" # cards, inputs
+textColor = "#EDEDED"
+font = "sans serif"
