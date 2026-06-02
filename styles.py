@@ -91,6 +91,18 @@ a { color: var(--kira-amber-soft); }
   margin: 0.1rem 0 0.5rem;
 }
 
+/* Themed inline note (replaces clashing st.info) */
+.kira-note {
+  border-left: 2px solid var(--kira-amber);
+  background: var(--kira-surface);
+  color: var(--kira-muted);
+  padding: 0.55rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  margin: 0.5rem 0;
+}
+.kira-note b { color: var(--kira-text); font-weight: 600; }
+
 /* Dark pill badge (placement_type on cards) */
 .kira-badge {
   font-family: var(--font-mono);

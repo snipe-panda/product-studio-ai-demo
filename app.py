@@ -262,7 +262,7 @@ elif st.session_state["stage"] == "recognize":
             if st.button("← Back to upload", use_container_width=True):
                 goto("upload")
         with col_retry:
-            if st.button("🔄 Retry recognition", use_container_width=True):
+            if st.button("↻ Retry recognition", use_container_width=True):
                 st.session_state.pop("recognition", None)
                 st.rerun()
         st.stop()
@@ -317,11 +317,11 @@ elif st.session_state["stage"] == "recognize":
         if st.button("← Back", use_container_width=True):
             goto("upload")
     with col_redo:
-        if st.button("🔄 Redo AI", use_container_width=True, help="Re-run GPT-4o on the same image"):
+        if st.button("↻ Redo AI", use_container_width=True, help="Re-run GPT-4o on the same image"):
             st.session_state.pop("recognition", None)
             st.rerun()
     with col_fwd:
-        if st.button("→ Continue to enhancement", type="primary", use_container_width=True):
+        if st.button("Continue to Enhance →", type="primary", use_container_width=True):
             # Persist the user's confirmed/corrected context
             st.session_state["product_context"] = {
                 "product_type": product_type,
@@ -388,7 +388,7 @@ elif st.session_state["stage"] == "enhance":
             if st.button("← Back to recognition", use_container_width=True):
                 goto("recognize")
         with col_retry:
-            if st.button("🔄 Retry enhancement", use_container_width=True):
+            if st.button("↻ Retry enhancement", use_container_width=True):
                 clear_generation("result")
                 st.rerun()
         st.stop()
@@ -397,23 +397,21 @@ elif st.session_state["stage"] == "enhance":
     source_stem = Path(st.session_state.get("source_name", "image")).stem
     images = result["images"]
 
-    used = st.session_state.get("gen_params", {})
-    if used:
-        st.caption(
-            f"Generated with **{used.get('model')}** · quality **{used.get('quality')}** · "
-            f"{used.get('size')} · n={used.get('n')}"
-        )
+    st.markdown(
+        '<div class="kira-eyebrow">Studio render · 1024×1024</div>',
+        unsafe_allow_html=True,
+    )
 
     col_before, col_after = st.columns(2)
     with col_before:
-        st.caption("Before")
+        st.markdown('<div class="kira-eyebrow">Before</div>', unsafe_allow_html=True)
         st.image(st.session_state["image_bytes"], use_container_width=True)
     with col_after:
-        st.caption("After")
+        st.markdown('<div class="kira-eyebrow">After</div>', unsafe_allow_html=True)
         first_img = b64_to_pil(images[0])
         st.image(first_img, use_container_width=True)
         st.download_button(
-            label="⬇️ Download",
+            label="↓ Download",
             data=base64.b64decode(images[0]),
             file_name=f"studio_{source_stem}.png",
             mime="image/png",
@@ -423,13 +421,16 @@ elif st.session_state["stage"] == "enhance":
 
     if len(images) > 1:
         st.divider()
-        st.subheader(f"Additional variations ({len(images) - 1})")
+        st.markdown(
+            f'<div class="kira-eyebrow">Variations · {len(images) - 1}</div>',
+            unsafe_allow_html=True,
+        )
         cols = st.columns(min(len(images) - 1, 3))
         for i, b64 in enumerate(images[1:], start=1):
             with cols[(i - 1) % len(cols)]:
                 st.image(b64_to_pil(b64), use_container_width=True)
                 st.download_button(
-                    label=f"⬇️ Variation {i + 1}",
+                    label=f"↓ Variation {i + 1}",
                     data=base64.b64decode(b64),
                     file_name=f"studio_{source_stem}_v{i + 1}.png",
                     mime="image/png",
@@ -437,40 +438,47 @@ elif st.session_state["stage"] == "enhance":
                     key=f"dl_{i}",
                 )
 
-    # ── Adjustment box (Step 9 — iterative feedback) ─────────────────────────
+    # ── Refine (iterative feedback) ──────────────────────────────────────────
     st.divider()
-    st.subheader("💬 Adjust the result")
+    st.markdown('<div class="kira-eyebrow">Refine</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="kira-stage-title" style="font-size:1.4rem;">Adjust the result</div>',
+        unsafe_allow_html=True,
+    )
     st.caption(
-        "Type a small change and re-run. The confirmed product details are kept "
-        "intact — only your adjustment is layered on top."
+        "Type a small change and re-run. Your confirmed product details stay "
+        "intact — only the tweak is layered on top."
     )
     new_adjustment = st.text_area(
         "Adjustment",
         value=adjustment,
-        placeholder='e.g. "use a soft warm grey background", "show it from a slight three-quarter angle", "soften the shadow"',
+        placeholder='e.g. "use a soft warm grey background", "show a slight three-quarter angle", "soften the shadow"',
         height=80,
         label_visibility="collapsed",
     )
     if adjustment:
-        st.info(f"🪄 Last adjustment used: _{adjustment}_")
+        st.markdown(
+            f'<div class="kira-note">Last refinement: <b>{adjustment}</b></div>',
+            unsafe_allow_html=True,
+        )
 
     # ── Navigation ───────────────────────────────────────────────────────────
     col_back, col_redo, col_apply = st.columns([1, 1, 2])
     with col_back:
-        if st.button("← Back", use_container_width=True):
+        if st.button("← Back", use_container_width=True):
             goto("recognize")
     with col_redo:
-        if st.button("🔄 Re-run", use_container_width=True, help="Re-run with the same adjustment, picking up any new sidebar settings"):
+        if st.button("↻ Re-run", use_container_width=True, help="Render again with the same settings"):
             clear_generation("result")
             st.rerun()
     with col_apply:
-        if st.button("✨ Apply adjustment & re-run", type="primary", use_container_width=True):
+        if st.button("Apply & re-run", type="primary", use_container_width=True):
             st.session_state["adjustment"] = new_adjustment.strip()
             clear_generation("result")
             st.rerun()
 
     st.divider()
-    if st.button("→ Try placements (lifestyle scenes)", use_container_width=True):
+    if st.button("Browse lifestyle scenes →", use_container_width=True):
         # Force fresh suggestions on entry
         st.session_state.pop("placements", None)
         st.session_state.pop("selected_placement_idx", None)
@@ -535,7 +543,7 @@ elif st.session_state["stage"] == "place":
             if st.button("← Back to enhance", use_container_width=True):
                 goto("enhance")
         with col_retry:
-            if st.button("🔄 Retry suggestions", use_container_width=True):
+            if st.button("↻ Retry suggestions", use_container_width=True):
                 st.session_state.pop("placements", None)
                 st.rerun()
         st.stop()
@@ -543,7 +551,7 @@ elif st.session_state["stage"] == "place":
     placements = suggestions.get("placements", [])
     if not placements:
         st.warning("Model returned no placements. Try again.")
-        if st.button("🔄 Retry"):
+        if st.button("↻ Retry"):
             st.session_state.pop("placements", None)
             st.rerun()
         st.stop()
@@ -592,7 +600,7 @@ elif st.session_state["stage"] == "place":
                             st.text(placement["scene_prompt"])
 
                     if st.button(
-                        "✨ Generate",
+                        "Generate",
                         key=f"gen_{idx}",
                         type="primary",
                         use_container_width=True,
@@ -627,7 +635,7 @@ elif st.session_state["stage"] == "place":
         pres = st.session_state["placement_result"]
         if "error" in pres:
             st.error(f"Generation failed: {pres['error']}")
-            if st.button("🔄 Retry generation"):
+            if st.button("↻ Retry generation"):
                 clear_generation("placement_result")
                 st.rerun()
         else:
@@ -635,19 +643,17 @@ elif st.session_state["stage"] == "place":
             slug = chosen.get("label", "scene").lower().replace(" ", "_").replace("/", "_")
             images = pres["images"]
 
-            used = st.session_state.get("gen_params", {})
-            if used:
-                st.caption(
-                    f"Generated with **{used.get('model')}** · quality **{used.get('quality')}** · "
-                    f"{used.get('size')} · n={used.get('n')}"
-                )
+            st.markdown(
+                '<div class="kira-eyebrow">Lifestyle render · 1024×1024</div>',
+                unsafe_allow_html=True,
+            )
 
             grid_cols = st.columns(min(len(images), 2))
             for i, b64 in enumerate(images):
                 with grid_cols[i % len(grid_cols)]:
                     st.image(b64_to_pil(b64), use_container_width=True)
                     st.download_button(
-                        label=f"⬇️ Download v{i + 1}" if len(images) > 1 else "⬇️ Download",
+                        label=f"↓ Download v{i + 1}" if len(images) > 1 else "↓ Download",
                         data=base64.b64decode(b64),
                         file_name=f"{source_stem}_{slug}_v{i + 1}.png",
                         mime="image/png",
@@ -662,7 +668,7 @@ elif st.session_state["stage"] == "place":
         if st.button("← Back to enhance", use_container_width=True):
             goto("enhance")
     with col_refresh:
-        if st.button("🔄 New suggestions", use_container_width=True, help="Ask GPT-4o for a fresh batch of scene ideas"):
+        if st.button("↻ New suggestions", use_container_width=True, help="Ask GPT-4o for a fresh batch of scene ideas"):
             st.session_state.pop("placements", None)
             st.session_state.pop("selected_placement_idx", None)
             clear_generation("placement_result")
