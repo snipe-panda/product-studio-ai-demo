@@ -10,6 +10,7 @@ top-to-bottom rerun on every interaction.
 """
 
 import base64
+import random
 from pathlib import Path
 
 import streamlit as st
@@ -25,6 +26,39 @@ from utils import b64_to_pil, pil_to_bytes, resize_image
 from vision import recognize_product, suggest_placements
 
 load_dotenv()
+
+
+# ── Witty processing messages (one picked at random per run) ──────────────────
+SPIN_IDENTIFY = [
+    "Squinting at the details…",
+    "Getting to know your product…",
+    "Reading the fine print, logos and all…",
+    "Sizing it up…",
+]
+SPIN_ENHANCE = [
+    "Rolling out the seamless backdrop…",
+    "Adjusting the studio lights…",
+    "Making it look expensive…",
+    "Booking the (virtual) photographer…",
+    "Straighten, light, polish, repeat…",
+]
+SPIN_SUGGEST = [
+    "Moodboarding {reg} scenes…",
+    "Scouting {reg} locations…",
+    "Auditioning props…",
+    "Dreaming up {reg} setups…",
+]
+SPIN_PLACE = [
+    "Dressing the set…",
+    "Styling the scene…",
+    "Arranging the props just so…",
+    "Rolling cameras…",
+]
+
+
+def spin(pool: list[str], **fmt) -> str:
+    """Pick a random witty line, formatting any {placeholders}."""
+    return random.choice(pool).format(**fmt)
 
 
 # ── Page config ───────────────────────────────────────────────────────────────
@@ -217,7 +251,7 @@ elif st.session_state["stage"] == "recognize":
 
     # Auto-run recognition once on entry
     if "recognition" not in st.session_state:
-        with st.spinner("Asking GPT-4o Vision to describe the product..."):
+        with st.spinner(spin(SPIN_IDENTIFY)):
             st.session_state["recognition"] = recognize_product(st.session_state["image_bytes"])
 
     rec = st.session_state["recognition"]
@@ -335,7 +369,7 @@ elif st.session_state["stage"] == "enhance":
         if "gen_params" not in st.session_state:
             snapshot_gen_params(model, quality, size, n_variations)
         gp = st.session_state["gen_params"]
-        with st.spinner(f"Calling {gp['model']} ({gp['quality']} quality, n={gp['n']})... 15-30s"):
+        with st.spinner(spin(SPIN_ENHANCE)):
             st.session_state["result"] = enhance_image_with_context(
                 image_bytes=st.session_state["image_bytes"],
                 product_context=ctx,
@@ -490,7 +524,7 @@ elif st.session_state["stage"] == "place":
     # ── Step A: ask GPT-4o for 10 tailored placement concepts ────────────────
     register = st.session_state["style_register"]
     if "placements" not in st.session_state:
-        with st.spinner(f"Asking GPT-4o for 10 {register.lower()} scene ideas..."):
+        with st.spinner(spin(SPIN_SUGGEST, reg=register.lower())):
             st.session_state["placements"] = suggest_placements(ctx, style_register=register)
 
     suggestions = st.session_state["placements"]
@@ -579,9 +613,7 @@ elif st.session_state["stage"] == "place":
             if "gen_params" not in st.session_state:
                 snapshot_gen_params(model, quality, size, n_variations)
             gp = st.session_state["gen_params"]
-            with st.spinner(
-                f"Rendering {gp['n']} variation(s) with {gp['model']} ({gp['quality']})... 15-30s"
-            ):
+            with st.spinner(spin(SPIN_PLACE)):
                 st.session_state["placement_result"] = generate_placement(
                     image_bytes=st.session_state["image_bytes"],
                     scene_prompt=chosen.get("scene_prompt", ""),
