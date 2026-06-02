@@ -91,6 +91,27 @@ a { color: var(--kira-amber-soft); }
   margin: 0.1rem 0 0.5rem;
 }
 
+/* Mood tags on placement cards (replaces default `code` chips) */
+.kira-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--kira-muted);
+  background: var(--kira-surface-2);
+  border: 1px solid var(--kira-border);
+  border-radius: 999px;
+  padding: 2px 9px;
+  margin: 0 5px 5px 0;
+}
+
+/* Themed metric (replaces default st.metric) */
+.kira-metric {
+  font-family: var(--font-display);
+  font-size: 1.9rem; font-weight: 700;
+  color: var(--kira-amber-soft);
+  line-height: 1.1;
+}
+
 /* Themed inline note (replaces clashing st.info) */
 .kira-note {
   border-left: 2px solid var(--kira-amber);

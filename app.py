@@ -3,10 +3,11 @@ app.py — Streamlit UI for Product Studio AI.
 All OpenAI calls go through image_pipeline.py and vision.py — never called
 directly here.
 
-Phase 2 introduces a multi-stage conversational flow:
-    upload → recognize → enhance
+Demo build — a four-stage conversational flow:
+    upload → recognize (Identify) → enhance → place
 The current stage lives in st.session_state["stage"] so it survives Streamlit's
-top-to-bottom rerun on every interaction.
+top-to-bottom rerun on every interaction. Image model is locked to
+gpt-image-2 / medium (see image_pipeline.py).
 """
 
 import base64
@@ -272,7 +273,11 @@ elif st.session_state["stage"] == "recognize":
     with col_img:
         st.image(st.session_state["image_bytes"], caption="Your photo", use_container_width=True)
         confidence = rec.get("meta", {}).get("confidence_score", 0.0)
-        st.metric("AI confidence", f"{confidence:.0%}")
+        st.markdown(
+            '<div class="kira-eyebrow">AI confidence</div>'
+            f'<div class="kira-metric">{confidence:.0%}</div>',
+            unsafe_allow_html=True,
+        )
 
     with col_form:
         st.caption("Correct anything the AI got wrong. These details will guide the enhancement.")
@@ -301,13 +306,13 @@ elif st.session_state["stage"] == "recognize":
 
         warnings = meta.get("warnings_for_enhancement", [])
         warnings_text = st.text_area(
-            "⚠️ Preservation warnings (do-not-alter list, one per line)",
+            "Do-not-alter list (one per line)",
             value="\n".join(warnings),
             height=80,
             help="Anything the enhancement model must be careful to preserve exactly.",
         )
 
-    with st.expander("📋 See the full AI description (read-only)"):
+    with st.expander("Full AI description (read-only)"):
         st.json(rec)
 
     # ── Navigation ───────────────────────────────────────────────────────────
@@ -582,7 +587,10 @@ elif st.session_state["stage"] == "place":
 
                     moods = placement.get("mood_keywords", [])
                     if moods:
-                        st.markdown(" ".join(f"`{m}`" for m in moods))
+                        st.markdown(
+                            "".join(f'<span class="kira-tag">{m}</span>' for m in moods),
+                            unsafe_allow_html=True,
+                        )
 
                     palette = placement.get("color_palette", [])
                     if palette:
