@@ -77,12 +77,28 @@ a { color: var(--kira-amber-soft); }
   color: #C9C9CE;
   max-width: 34ch;
 }
-.kira-chips { display: flex; flex-wrap: wrap; gap: 1.2rem; margin-top: 1.6rem; }
+.kira-chips { display: flex; flex-wrap: wrap; gap: 0.6rem 1.1rem; margin-top: 1.6rem; }
 .kira-chip {
   display: inline-flex; align-items: center; gap: 0.45rem;
   font-size: 0.9rem; color: var(--kira-text);
 }
 .kira-chip .ic { color: var(--kira-amber); }
+
+/* Per-stage heading (Identify / Enhance / Place) */
+.kira-stage-title {
+  font-family: var(--font-display);
+  font-size: 2rem; font-weight: 700;
+  margin: 0.1rem 0 0.5rem;
+}
+
+/* Dark pill badge (placement_type on cards) */
+.kira-badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 999px;
+  background: var(--kira-surface-2); color: var(--kira-amber-soft);
+  border: 1px solid var(--kira-border);
+}
 
 /* Brand lockup in the header */
 .kira-brand { display: flex; align-items: center; gap: 0.6rem; }
@@ -146,6 +162,17 @@ a { color: var(--kira-amber-soft); }
   min-height: 220px;
 }
 [data-testid="stFileUploaderDropzone"]:hover { border-color: var(--kira-amber); }
+/* Custom dropzone copy (keeps the real size limit as a muted sub-line) */
+[data-testid="stFileUploaderDropzoneInstructions"] > div::before {
+  content: "Drop a product photo or click to browse";
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 600; font-size: 1.05rem; color: var(--kira-text);
+  margin-bottom: 5px;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] span {
+  color: var(--kira-muted); font-size: 0.8rem;
+}
 
 /* ── Stepper ────────────────────────────────────────────────────────────── */
 .kira-stepper { display: flex; align-items: center; gap: 0.4rem; margin: 0.2rem 0 1.6rem; }

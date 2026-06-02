@@ -96,6 +96,7 @@ def reset_all() -> None:
         "placements",
         "selected_placement_idx",
         "placement_result",
+        "style_register",
         "gen_params",
     ]:
         st.session_state.pop(key, None)
@@ -180,6 +181,7 @@ if st.session_state["stage"] == "upload":
             type=["jpg", "jpeg", "png"],
             label_visibility="collapsed",
         )
+        st.caption("No photo handy? Drop any image to see the pipeline run.")
 
     if uploaded_file is not None:
         # Resize once and store bytes in session state so later stages have it
@@ -204,7 +206,8 @@ if st.session_state["stage"] == "upload":
 # STAGE 2 — RECOGNIZE
 # ═══════════════════════════════════════════════════════════════════════════════
 elif st.session_state["stage"] == "recognize":
-    st.subheader("② Review and correct the product description")
+    st.markdown('<div class="kira-eyebrow">Step 2 · Identify</div>', unsafe_allow_html=True)
+    st.markdown('<div class="kira-stage-title">Review the product details</div>', unsafe_allow_html=True)
 
     if "image_bytes" not in st.session_state:
         st.error("No image found — please go back and upload first.")
@@ -308,7 +311,8 @@ elif st.session_state["stage"] == "recognize":
 # STAGE 3 — ENHANCE
 # ═══════════════════════════════════════════════════════════════════════════════
 elif st.session_state["stage"] == "enhance":
-    st.subheader("③ Studio enhancement")
+    st.markdown('<div class="kira-eyebrow">Step 3 · Enhance</div>', unsafe_allow_html=True)
+    st.markdown('<div class="kira-stage-title">Studio enhancement</div>', unsafe_allow_html=True)
 
     if "image_bytes" not in st.session_state:
         st.error("No image found — please go back and upload first.")
@@ -444,7 +448,8 @@ elif st.session_state["stage"] == "enhance":
 # STAGE 4 — PLACE (lifestyle / scene placement)
 # ═══════════════════════════════════════════════════════════════════════════════
 elif st.session_state["stage"] == "place":
-    st.subheader("④ Pick a lifestyle scene")
+    st.markdown('<div class="kira-eyebrow">Step 4 · Placement</div>', unsafe_allow_html=True)
+    st.markdown('<div class="kira-stage-title">Pick a lifestyle scene</div>', unsafe_allow_html=True)
 
     if "image_bytes" not in st.session_state:
         st.error("No image found — please go back and upload first.")
@@ -454,10 +459,39 @@ elif st.session_state["stage"] == "place":
 
     ctx = st.session_state.get("product_context", {})
 
-    # ── Step A: ask GPT-4o for 4 tailored placement concepts ─────────────────
+    # ── Style register selector ──────────────────────────────────────────────
+    # Lets the user override the model's category-default aesthetic
+    # (e.g. jewellery skewing luxe, plants skewing casual).
+    st.session_state.setdefault("style_register", "Modern")
+    REGISTERS = ["Understated", "Modern", "Luxe"]
+    st.caption("Styling — sets how restrained or premium every scene looks:")
+    if hasattr(st, "segmented_control"):
+        chosen_register = st.segmented_control(
+            "Styling",
+            REGISTERS,
+            default=st.session_state["style_register"],
+            label_visibility="collapsed",
+        )
+    else:
+        chosen_register = st.radio(
+            "Styling",
+            REGISTERS,
+            index=REGISTERS.index(st.session_state["style_register"]),
+            horizontal=True,
+            label_visibility="collapsed",
+        )
+    if chosen_register and chosen_register != st.session_state["style_register"]:
+        st.session_state["style_register"] = chosen_register
+        st.session_state.pop("placements", None)
+        st.session_state.pop("selected_placement_idx", None)
+        clear_generation("placement_result")
+        st.rerun()
+
+    # ── Step A: ask GPT-4o for 10 tailored placement concepts ────────────────
+    register = st.session_state["style_register"]
     if "placements" not in st.session_state:
-        with st.spinner("Asking GPT-4o for 4 tailored scene ideas..."):
-            st.session_state["placements"] = suggest_placements(ctx)
+        with st.spinner(f"Asking GPT-4o for 10 {register.lower()} scene ideas..."):
+            st.session_state["placements"] = suggest_placements(ctx, style_register=register)
 
     suggestions = st.session_state["placements"]
     if "error" in suggestions:
@@ -480,7 +514,7 @@ elif st.session_state["stage"] == "place":
             st.rerun()
         st.stop()
 
-    st.caption("Each scene was tailored to your product. Click **Generate** on the one you like.")
+    st.caption(f"10 **{register}** scenes tailored to your product. Click **Generate** on one you like.")
 
     # ── Step B: 2×2 grid of placement cards ──────────────────────────────────
     cards_per_row = 2
@@ -496,9 +530,7 @@ elif st.session_state["stage"] == "place":
                     if type_label:
                         st.markdown(
                             f"**{placement.get('label', f'Option {idx + 1}')}** &nbsp; "
-                            f"<span style='font-size:0.75em;padding:2px 8px;border-radius:10px;"
-                            f"background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;'>"
-                            f"{type_label}</span>",
+                            f"<span class='kira-badge'>{type_label}</span>",
                             unsafe_allow_html=True,
                         )
                     else:

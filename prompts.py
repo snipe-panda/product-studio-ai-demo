@@ -322,6 +322,34 @@ preservation rules.
 # `in_use`, `on_body`, or `on_mannequin` placement types, read those notes
 # first — there is a checklist for doing it safely.
 
+# Aesthetic registers the user picks on the Place stage. Each is injected into
+# the {style_register} slot of PLACEMENT_SUGGESTIONS_PROMPT to override the
+# model's category-default styling. Keys match the UI labels.
+STYLE_REGISTERS = {
+    "Understated": (
+        "UNDERSTATED / MINIMALIST. Maximum restraint. Heavy negative space, a "
+        "single clean surface, at most 1–2 props. Muted, near-monochrome or "
+        "tonal palette (soft whites, greys, sand, pale stone). Soft, even, "
+        "diffused light with gentle shadows. No clutter, no drama, no rich "
+        "materials. Think quiet Scandinavian / Kinfolk editorial calm."
+    ),
+    "Modern": (
+        "MODERN / EVERYDAY-ELEVATED. Approachable but polished — the look of a "
+        "well-shot contemporary retail or DTC brand listing. Clean surfaces with "
+        "a few intentional, real-world props. Warm, natural light. Balanced, "
+        "inviting palette with one or two accent colours. Neither stark nor "
+        "opulent — confident and current."
+    ),
+    "Luxe": (
+        "LUXE / PREMIUM. High-end and editorial. Rich materials (marble, brass, "
+        "polished stone, velvet, dark wood, glass). Dramatic directional lighting "
+        "with deliberate highlights and shadow. Deep, saturated or jewel-toned "
+        "palette. A sense of occasion and craftsmanship. Think luxury magazine "
+        "or flagship-boutique product photography."
+    ),
+}
+
+
 PLACEMENT_SUGGESTIONS_PROMPT = """
 You are a creative director, set designer, and brand stylist combined. You are
 about to brief an image-generation model to produce ten distinct lifestyle /
@@ -332,6 +360,15 @@ distinct, commercially compelling placement concepts tailored to THIS product.
 CONFIRMED PRODUCT
 ═══════════════════════════════════════════════════════
 {product_context}
+
+═══════════════════════════════════════════════════════
+STYLE REGISTER (the aesthetic the user has chosen — obey it)
+═══════════════════════════════════════════════════════
+{style_register}
+
+This register overrides any default aesthetic you would infer from the product
+category. Do NOT default jewellery to opulent or plants to casual — apply the
+register above to EVERY one of the 10 placements consistently.
 
 ═══════════════════════════════════════════════════════
 WHAT MAKES A GOOD PLACEMENT

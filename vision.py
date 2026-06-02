@@ -9,7 +9,11 @@ import json
 
 from openai import OpenAI
 
-from prompts import PLACEMENT_SUGGESTIONS_PROMPT, RECOGNIZE_PRODUCT_PROMPT
+from prompts import (
+    PLACEMENT_SUGGESTIONS_PROMPT,
+    RECOGNIZE_PRODUCT_PROMPT,
+    STYLE_REGISTERS,
+)
 
 _client: OpenAI | None = None
 
@@ -78,21 +82,31 @@ def _format_product_context_text(ctx: dict) -> str:
     return "\n".join(lines) if lines else "(no product context provided)"
 
 
-def suggest_placements(product_context: dict, model: str = "gpt-4o") -> dict:
+def suggest_placements(
+    product_context: dict,
+    style_register: str = "Modern",
+    model: str = "gpt-4o",
+) -> dict:
     """
-    Ask GPT-4o for 4 placement / styling concepts tailored to the product.
-    Text-only call (no image needed) — context comes from the confirmed
-    description from Stage 2.
+    Ask GPT-4o for 10 placement / styling concepts tailored to the product,
+    in the chosen aesthetic register. Text-only call (no image needed) —
+    context comes from the confirmed description from Stage 2.
+
+    `style_register` is a key in prompts.STYLE_REGISTERS
+    ("Understated" | "Modern" | "Luxe"); it overrides the model's
+    category-default styling.
 
     Returns:
-        On success: {"placements": [ {label, description, mood_keywords,
-            scene_prompt, color_palette, why_it_works}, ... ]}
+        On success: {"placements": [ {label, placement_type, description,
+            mood_keywords, scene_prompt, color_palette, why_it_works}, ... ]}
         On failure: {"error": "..."}
     """
     text = ""
     try:
+        register_text = STYLE_REGISTERS.get(style_register, STYLE_REGISTERS["Modern"])
         prompt = PLACEMENT_SUGGESTIONS_PROMPT.format(
             product_context=_format_product_context_text(product_context),
+            style_register=register_text,
         )
         response = _get_client().chat.completions.create(
             model=model,
